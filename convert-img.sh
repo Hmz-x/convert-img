@@ -134,12 +134,26 @@ get_rand_color()
 	# 1-20%: purple, 21-40%: pink, 41-55%: orange, 56-70% yellow, 71-75%: blue, 76-80%: green, 81-85%: red
 	# 86-90%: brown, 91-95: black, 96-100: white
 	rand_color_percent=$(get_rand_num)
-	echo "rand_color_percent: $rand_color_percent"
+	#echo "rand_color_percent: $rand_color_percent"
 
-	if ((20 >= rand_color_percent && rand_color_percent >=1)); then
+	if ((20 >= rand_color_percent && rand_color_percent >= 1)); then
 		random_color="purple"	
-	elif ((40 >= rand_color_percent && rand_color_percent >=21)); then
+	elif ((40 >= rand_color_percent && rand_color_percent >= 21)); then
+		random_color="pink"	
+	elif ((55 >= rand_color_percent && rand_color_percent >= 41)); then
 		random_color="orange"	
+	elif ((70 >= rand_color_percent && rand_color_percent >= 56)); then
+		random_color="yellow"	
+	elif ((75 >= rand_color_percent && rand_color_percent >= 71)); then
+		random_color="blue"	
+	elif ((80 >= rand_color_percent && rand_color_percent >= 76)); then
+		random_color="green"	
+	elif ((85 >= rand_color_percent && rand_color_percent >= 81)); then
+		random_color="red"	
+	elif ((90 >= rand_color_percent && rand_color_percent >= 86)); then
+		random_color="brown"	
+	elif ((95 >= rand_color_percent && rand_color_percent >= 91)); then
+		random_color="black"	
 	else
 		random_color="white"
 	fi
@@ -151,22 +165,22 @@ randomize_swap_color()
 {
 	# first determine fuzz level. 
 	# 1-5%: 5, 6-15%: 10, 26-35%: 15, 36-55%: 20, 56-75%: 25, 76-85%: 30, 86-95% 35, 96-100%: 40
-	fuzz_percent=$(get_rand_num)
-	#echo "fuzz_percent: $fuzz_percent"
+	rand_fuzz_percent=$(get_rand_num)
+	#echo "rand_fuzz_percent: $rand_fuzz_percent"
 
-	if ((5 >= fuzz_percent && fuzz_percent >= 1)); then
+	if ((5 >= rand_fuzz_percent && rand_fuzz_percent >= 1)); then
 		fuzz_lvl=5
-	elif ((15 >= fuzz_percent && fuzz_percent >= 6)); then
+	elif ((15 >= rand_fuzz_percent && rand_fuzz_percent >= 6)); then
 		fuzz_lvl=10
-	elif ((35 >= fuzz_percent && fuzz_percent >= 26)); then
+	elif ((35 >= rand_fuzz_percent && rand_fuzz_percent >= 26)); then
 		fuzz_lvl=15
-	elif ((55 >= fuzz_percent && fuzz_percent >= 36)); then
+	elif ((55 >= rand_fuzz_percent && rand_fuzz_percent >= 36)); then
 		fuzz_lvl=20
-	elif ((75 >= fuzz_percent && fuzz_percent >= 56)); then
+	elif ((75 >= rand_fuzz_percent && rand_fuzz_percent >= 56)); then
 		fuzz_lvl=25
-	elif ((86 >= fuzz_percent && fuzz_percent >= 76)); then
+	elif ((86 >= rand_fuzz_percent && rand_fuzz_percent >= 76)); then
 		fuzz_lvl=30
-	elif ((95 >= fuzz_percent && fuzz_percent >= 86)); then
+	elif ((95 >= rand_fuzz_percent && rand_fuzz_percent >= 86)); then
 		fuzz_lvl=35
 	else
 		fuzz_lvl=40
@@ -174,12 +188,12 @@ randomize_swap_color()
 
 	# secondly determine search color
 	# 1-40%: white 70-41%: black 100-71:% any random color
-	search_percent=$(get_rand_num)
-	#echo "search_percent: $search_percent"
+	random_search_percent=$(get_rand_num)
+	#echo "random_search_percent: $random_search_percent"
 
-	if ((40 >= search_percent && search_percent >= 1)); then
+	if ((40 >= random_search_percent && random_search_percent >= 1)); then
 		search_color="white"
-	elif ((70 >= search_percent && search_percent >= 41)); then
+	elif ((70 >= random_search_percent && random_search_percent >= 41)); then
 		search_color="black"
 	else
 		search_color="$(get_rand_color)"
@@ -187,16 +201,31 @@ randomize_swap_color()
 
 	# finally, determine replace color
 	replace_color="$(get_rand_color)"
+
+	random_args+=("--swap" $fuzz_lvl "$search_color" "$replace_color")
+}
+
+randomize_all()
+{
+	# First two argument is input flag and input
+	random_args+=("--input" "$1")
+
+	# 35% chance swap color
+	swap_color_chance=100
+	swap_color_percent=$(get_rand_num)
+	((swap_color_percent <= swap_color_chance)) && randomize_swap_color
+
+	parse_opts "${random_args[@]}"
 }
 
 parse_opts(){
 	# Parse and evaluate each option one by one 
-
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
 			-h|--help) show_help;;
 		    -v|--version) show_version;;
 			-i|--input) input="$2"; shift;;
+			-o|--output) file_output="$2"; shift;;
 			--mvgs) input="$(mirror_vertically_gravity_south "$input")";;
 			--mvgn) input="$(mirror_vertically_gravity_north "$input")";;
 			--mhge) input="$(mirror_horizontally_gravity_east "$input")";;
@@ -206,12 +235,20 @@ parse_opts(){
 					for i in $(seq 1 3); do
 						shift
 					done;;
-			-r|--random) randomize "$input";;
+			-r|--random) input="$(randomize_all "$input")";;
 			 --) break;;
 			  *) err "Unknown option. Please see '--help'";;
 		esac
 		shift
 	done
+	
+	echo "$input"
 }
 
+#random_args=()
+file_output=""
 parse_opts "$@"
+#echo "input $input"
+#echo "output $file_output"
+#[ -n "$file_output" ] && mv "$input" "$file_output"
+
