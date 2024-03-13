@@ -109,23 +109,10 @@ resize_item_img()
 	#convert "$input" 
 }
 
-get_rand_bool()
-{
-	# Return true if random number is equal or smaller then $set_percentage 
-
-	set_percentage=$1
-	random_num=$((1 + $RANDOM % 100))
-
-	if [ $set_percentage -eg $random_num]; then
-		return true
-	else
-		return false
-	fi
-}
-
 get_rand_num()
 {
-	random_num=$((1 + $RANDOM % 100))
+	limit=$1
+	random_num=$((1 + $RANDOM % $limit))
 	echo $random_num
 }
 
@@ -133,7 +120,7 @@ get_rand_color()
 {
 	# 1-20%: purple, 21-40%: pink, 41-55%: orange, 56-70% yellow, 71-75%: blue, 76-80%: green, 81-85%: red
 	# 86-90%: brown, 91-95: black, 96-100: white
-	rand_color_percent=$(get_rand_num)
+	rand_color_percent=$(get_rand_num 100)
 	#echo "rand_color_percent: $rand_color_percent"
 
 	if ((20 >= rand_color_percent && rand_color_percent >= 1)); then
@@ -165,7 +152,7 @@ randomize_swap_color()
 {
 	# first determine fuzz level. 
 	# 1-5%: 5, 6-15%: 10, 26-35%: 15, 36-55%: 20, 56-75%: 25, 76-85%: 30, 86-95% 35, 96-100%: 40
-	rand_fuzz_percent=$(get_rand_num)
+	rand_fuzz_percent=$(get_rand_num 100)
 	#echo "rand_fuzz_percent: $rand_fuzz_percent"
 
 	if ((5 >= rand_fuzz_percent && rand_fuzz_percent >= 1)); then
@@ -188,7 +175,7 @@ randomize_swap_color()
 
 	# secondly determine search color
 	# 1-40%: white 70-41%: black 100-71:% any random color
-	random_search_percent=$(get_rand_num)
+	random_search_percent=$(get_rand_num 100)
 	#echo "random_search_percent: $random_search_percent"
 
 	if ((40 >= random_search_percent && random_search_percent >= 1)); then
@@ -205,6 +192,17 @@ randomize_swap_color()
 	random_args+=("--swap" $fuzz_lvl "$search_color" "$replace_color")
 }
 
+randomize_mirror_img()
+{
+	rand_mirror_fx=$(get_rand_num 4)
+	case $rand_mirror_fx in 
+		1) random_args+=("--mvgs");;
+		2) random_args+=("--mvgn");;
+		3) random_args+=("--mhge");;
+		4) random_args+=("--mhgw");;
+	esac
+}
+
 randomize_all()
 {
 	# First two argument is input flag and input
@@ -212,8 +210,13 @@ randomize_all()
 
 	# 35% chance swap color
 	swap_color_chance=100
-	swap_color_percent=$(get_rand_num)
+	swap_color_percent=$(get_rand_num 100)
 	((swap_color_percent <= swap_color_chance)) && randomize_swap_color
+
+	# 35% chance mirror img
+	mirror_img_chance=100
+	mirror_img_percent=$(get_rand_num 100)
+	((mirror_img_percent <= mirror_img_chance)) && randomize_mirror_img
 
 	parse_opts "${random_args[@]}"
 }
