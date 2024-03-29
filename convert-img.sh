@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 
 # TO IMPLEMENT:
 # 1) transparent "item" images to be insterted on the main input image,
@@ -9,7 +9,7 @@
 # Client to send image via signal ? and for automatic downloading and running randomization and sending to server
 
 # Program Data
-PROGRAM="convert-img"
+PROGRAM="convert-img.sh"
 LICENSE="GNU GPLv3"
 VERSION="1.0"
 AUTHOR="Hamza Kerem Mumcu"
@@ -22,6 +22,7 @@ USAGE="Usage: $PROGRAM
 	-r|--random
 	--swap FUZZ_LVL COLOR_SEARCH COLOR_REPLACE | --swap 20 purple black
 	--frame COLOR1 COLOR2 | --frame blue black
+	--contrast BLACK_POINT_LVL WHITE_POINT_LVL GAMMA_ADJ_VAL | --contrast 0 75 0.5
 	--mvgn	
 	--mvgs	
 	--mhge	
@@ -113,7 +114,11 @@ swap_colors()
 	output="${fx_name}_${input}"
 
 	convert "$input" -debug None -fuzz $fuzz_lvl% -fill "$color_replace" -opaque "$color_search" -flatten "${output}"
-	[ "$LOG_BOOL" = "TRUE" ] && echo "$(date) $(ls "$output")" &> "$LOG_FILE"
+	#[ "$LOG_BOOL" = "TRUE" ] && echo "$(date) $(ls "$output")" &> "$LOG_FILE"
+	#convert "$input" -debug None -fuzz $fuzz_lvl% -fill "$color_replace" -opaque \
+		#"$color_search" -flatten "${output}" && \ 
+		#[ "$LOG_BOOL" = "TRUE" ] && echo "$(date) $(ls "$output")" &> "$LOG_FILE"
+
 	echo "$output"
 }
 
@@ -124,11 +129,23 @@ add_frame()
 	output="${fx_name}_${input}"
 	tmp_file="$(mktemp)"
 
-	magick "$input" \( +clone  -background "$2"  -shadow 60x20-10+10 \) \
+	convert "$input" \( +clone  -background "$2"  -shadow 60x20-10+10 \) \
 		+swap -background none -layers merge +repage "$tmp_file" && \
-	magick "$tmp_file" \( +clone  -background "$3"  -shadow 60x20+10+10 \) \
+	convert "$tmp_file" \( +clone  -background "$3"  -shadow 60x20+10+10 \) \
 		+swap -background none -layers merge +repage "$output"
 	
+	rm "$tmp_file"	
+	echo "$output"
+}
+
+add_contrast()
+{
+	fx_name="cntrst"
+	input="$1"
+	output="${fx_name}_${input}"
+
+	convert "$input" -level $2%,$3%,"$4" "$output"
+
 	echo "$output"
 }
 
@@ -236,15 +253,50 @@ randomize_frame()
 	
 	for i in $(seq 1 2); do
 		random_frame_percent=$(get_rand_num 100)
-		if ((40 >= random_frame_percent && random_frame_percent >= 1)); then
+		if ((20 >= random_frame_percent && random_frame_percent >= 1)); then
 			frame_color="white"
-		elif ((70 >= random_frame_percent && random_frame_percent >= 41)); then
+		elif ((40 >= random_frame_percent && random_frame_percent >= 21)); then
 			frame_color="black"
 		else
 			frame_color="$(get_rand_color)"
 		fi
 		
 		random_args+=("$frame_color")
+	done
+}
+
+randomize_contrast()
+{
+	random_args+=("--contrast")
+
+	for i in $(seq 1 2); do
+		random_contrast_percent=$(get_rand_num 100)
+		if ((20 >= random_contrast_percent && random_contrast_percent >= 1)); then
+			contrast_level=0
+		elif ((40 >= random_contrast_percent && random_contrast_percent >= 21)); then
+			contrast_level=25
+		elif ((60 >= random_contrast_percent && random_contrast_percent >= 21)); then
+			contrast_level=50
+		elif ((80 >= random_contrast_percent && random_contrast_percent >= 21)); then
+			contrast_level=75
+		else
+			contrast_level="$(get_rand_level)"
+		fi
+		
+		random_args+=("$contrast_level")
+	done
+
+	for i in $(seq 1 2); do
+		random_contrast_percent=$(get_rand_num 100)
+		if ((20 >= random_contrast_percent && random_contrast_percent >= 1)); then
+			contrast_color="white"
+		elif ((40 >= random_contrast_percent && random_contrast_percent >= 21)); then
+			contrast_color="black"
+		else
+			contrast_color="$(get_rand_color)"
+		fi
+		
+		random_args+=("$contrast_color")
 	done
 }
 
@@ -271,6 +323,13 @@ randomize_all()
 	parse_opts "${random_args[@]}"
 }
 
+shift_for()
+{
+	for i in $(seq 1 $1); do
+		shift
+	done
+}
+
 parse_opts(){
 	# Parse and evaluate each option one by one 
 	while [ "$#" -gt 0 ]; do
@@ -285,14 +344,14 @@ parse_opts(){
 			--mhgw) input="$(mirror_horizontally_gravity_west "$input")";;
 			--swap) input="$(swap_colors "$input" "$2" "$3" "$4")"
 					# shift forward to next CLI args 3 times
-					for i in $(seq 1 3); do
-						shift
-					done;;
+					#shift_for 3;;
+					shift; shift; shift;;
 			--frame) input="$(add_frame "$input" "$2" "$3")"
-					# shift forward to next CLI args 2 times
-					for i in $(seq 1 2); do
-						shift
-					done;;
+					#shift_for 2;;
+					shift; shift;;
+			--contrast) input="$(add_contrast "$input" "$2" "$3" "$4")"
+					#shift_for 3;;
+					shift; shift; shift;;
 			-r|--random) input="$(randomize_all "$input")";;
 			 --) break;;
 			  *) err "Unknown option. Please see '--help'";;
