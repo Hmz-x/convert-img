@@ -1,21 +1,35 @@
 #!/bin/bash
 
 # TO IMPLEMENT:
-# 0) input string validation for user input
 # 1) transparent "item" images to be insterted on the main input image,
 # implemented with features such as slight rotation, color enchacement, easy duplication placement not to mention resized
-# 2) Random functionality implementation: setting defaults for number of fx, etc.
 # 2) Output to be automatically sent to the server directory and the website to display output image. The output
 # image to be then downloadable after clicking on it.
 # Implement special start shape and star formations: make em stack side by side and top and bottom
 # Client to send image via signal ? and for automatic downloading and running randomization and sending to server
 
 # Program Data
-PROGRAM="$(basename "$0")"
+PROGRAM="convert-img"
 LICENSE="GNU GPLv3"
 VERSION="1.0"
 AUTHOR="Hamza Kerem Mumcu"
-USAGE="Usage: $PROGRAM"
+USAGE="Usage: $PROGRAM
+	
+	example: $PROGRAM -i in.jpeg -r -o out.jpeg
+
+	-i|--input INPUT
+	-o|--output OUTPUT
+	-r|--random
+	--swap FUZZ_LVL COLOR_SEARCH COLOR_REPLACE | --swap 20 purple black
+	--frame COLOR1 COLOR2 | --frame blue black
+	--mvgn	
+	--mvgs	
+	--mhge	
+	--mhgw	
+	-h|--help
+	-v|--version"
+LOG_BOOL="TRUE"
+LOG_FILE="$PROGRAM.log"
 
 err(){
 	printf "%s. Exitting.\n" "$1" >&2
@@ -54,7 +68,6 @@ mirror_vertically_gravity_north()
 	fx_name="mvgn"
 	input="$1"
 	output="${fx_name}_${input}"
-	#[ -f "$input" ] && echo check && file "$input"
 
 	convert "$input" -gravity North -chop 0x50% -flip -write mpr:top +delete \
 		"$input" -gravity North -chop 0x50% -write mpr:bottom +delete \
@@ -99,7 +112,23 @@ swap_colors()
 	input="$1"
 	output="${fx_name}_${input}"
 
-	convert "$input" -fuzz $fuzz_lvl% -fill "$color_replace" -opaque "$color_search" -flatten "$output"
+	convert "$input" -debug None -fuzz $fuzz_lvl% -fill "$color_replace" -opaque "$color_search" -flatten "${output}"
+	[ "$LOG_BOOL" = "TRUE" ] && echo "$(date) $(ls "$output")" &> "$LOG_FILE"
+	echo "$output"
+}
+
+add_frame()
+{
+	fx_name="shdw"
+	input="$1"
+	output="${fx_name}_${input}"
+	tmp_file="$(mktemp)"
+
+	magick "$input" \( +clone  -background "$2"  -shadow 60x20-10+10 \) \
+		+swap -background none -layers merge +repage "$tmp_file" && \
+	magick "$tmp_file" \( +clone  -background "$3"  -shadow 60x20+10+10 \) \
+		+swap -background none -layers merge +repage "$output"
+	
 	echo "$output"
 }
 
@@ -121,7 +150,6 @@ get_rand_color()
 	# 1-20%: purple, 21-40%: pink, 41-55%: orange, 56-70% yellow, 71-75%: blue, 76-80%: green, 81-85%: red
 	# 86-90%: brown, 91-95: black, 96-100: white
 	rand_color_percent=$(get_rand_num 100)
-	#echo "rand_color_percent: $rand_color_percent"
 
 	if ((20 >= rand_color_percent && rand_color_percent >= 1)); then
 		random_color="purple"	
@@ -176,7 +204,6 @@ randomize_swap_color()
 	# secondly determine search color
 	# 1-40%: white 70-41%: black 100-71:% any random color
 	random_search_percent=$(get_rand_num 100)
-	#echo "random_search_percent: $random_search_percent"
 
 	if ((40 >= random_search_percent && random_search_percent >= 1)); then
 		search_color="white"
@@ -203,18 +230,41 @@ randomize_mirror_img()
 	esac
 }
 
+randomize_frame()
+{
+	random_args+=("--frame")
+	
+	for i in $(seq 1 2); do
+		random_frame_percent=$(get_rand_num 100)
+		if ((40 >= random_frame_percent && random_frame_percent >= 1)); then
+			frame_color="white"
+		elif ((70 >= random_frame_percent && random_frame_percent >= 41)); then
+			frame_color="black"
+		else
+			frame_color="$(get_rand_color)"
+		fi
+		
+		random_args+=("$frame_color")
+	done
+}
+
 randomize_all()
 {
 	# First two argument is input flag and input
 	random_args+=("--input" "$1")
 
+	# 35% chance add frame
+	add_frame_chance=35
+	add_frame_percent=$(get_rand_num 100)
+	((add_frame_percent <= add_frame_chance)) && randomize_frame
+
 	# 35% chance swap color
-	swap_color_chance=100
+	swap_color_chance=35
 	swap_color_percent=$(get_rand_num 100)
 	((swap_color_percent <= swap_color_chance)) && randomize_swap_color
 
 	# 35% chance mirror img
-	mirror_img_chance=100
+	mirror_img_chance=35
 	mirror_img_percent=$(get_rand_num 100)
 	((mirror_img_percent <= mirror_img_chance)) && randomize_mirror_img
 
@@ -233,9 +283,14 @@ parse_opts(){
 			--mvgn) input="$(mirror_vertically_gravity_north "$input")";;
 			--mhge) input="$(mirror_horizontally_gravity_east "$input")";;
 			--mhgw) input="$(mirror_horizontally_gravity_west "$input")";;
-			--swap) input="$(swap_colors "$input" "$2" "$3" "$4")";
+			--swap) input="$(swap_colors "$input" "$2" "$3" "$4")"
 					# shift forward to next CLI args 3 times
 					for i in $(seq 1 3); do
+						shift
+					done;;
+			--frame) input="$(add_frame "$input" "$2" "$3")"
+					# shift forward to next CLI args 2 times
+					for i in $(seq 1 2); do
 						shift
 					done;;
 			-r|--random) input="$(randomize_all "$input")";;
@@ -253,5 +308,4 @@ file_output=""
 parse_opts "$@"
 #echo "input $input"
 #echo "output $file_output"
-#[ -n "$file_output" ] && mv "$input" "$file_output"
-
+[ -n "$file_output" ] && mv -v "$input" "$file_output"
