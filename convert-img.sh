@@ -286,18 +286,22 @@ randomize_contrast()
 		random_args+=("$contrast_level")
 	done
 
-	for i in $(seq 1 2); do
-		random_contrast_percent=$(get_rand_num 100)
-		if ((20 >= random_contrast_percent && random_contrast_percent >= 1)); then
-			contrast_color="white"
-		elif ((40 >= random_contrast_percent && random_contrast_percent >= 21)); then
-			contrast_color="black"
-		else
-			contrast_color="$(get_rand_color)"
-		fi
-		
-		random_args+=("$contrast_color")
-	done
+	random_gamma_percent=$(get_rand_num 100)
+	if ((50 >= random_gamma_percent && random_gamma_percent >= 1)); then
+		gamma_val="1.0"
+	elif ((60 >= random_gamma_percent && random_gamma_percent >= 51)); then
+		gamma_val="0.8"
+	elif ((70 >= random_gamma_percent && random_gamma_percent >= 61)); then
+		gamma_val="1.2"
+	elif ((80 >= random_gamma_percent && random_gamma_percent >= 71)); then
+		gamma_val="0.6"
+	elif ((90 >= random_gamma_percent && random_gamma_percent >= 81)); then
+		gamma_val="1.4"
+	else
+		gamma_val="2.0"
+	fi
+	
+	random_args+=("$gamma_val")
 }
 
 randomize_all()
@@ -306,17 +310,22 @@ randomize_all()
 	random_args+=("--input" "$1")
 
 	# 35% chance add frame
-	add_frame_chance=35
+	add_frame_chance=0
 	add_frame_percent=$(get_rand_num 100)
 	((add_frame_percent <= add_frame_chance)) && randomize_frame
 
 	# 35% chance swap color
-	swap_color_chance=35
+	swap_color_chance=0
 	swap_color_percent=$(get_rand_num 100)
 	((swap_color_percent <= swap_color_chance)) && randomize_swap_color
 
+	# 35% chance add contrast
+	add_contrast_chance=100
+	add_contrast_percent=$(get_rand_num 100)
+	((add_contrast_percent <= add_contrast_chance)) && randomize_contrast
+
 	# 35% chance mirror img
-	mirror_img_chance=35
+	mirror_img_chance=0
 	mirror_img_percent=$(get_rand_num 100)
 	((mirror_img_percent <= mirror_img_chance)) && randomize_mirror_img
 
