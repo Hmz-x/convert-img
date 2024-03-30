@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 
 # TO IMPLEMENT:
 # 1) transparent "item" images to be insterted on the main input image,
@@ -124,7 +124,7 @@ swap_colors()
 
 add_frame()
 {
-	fx_name="shdw"
+	fx_name="frm"
 	input="$1"
 	output="${fx_name}_${input}"
 	tmp_file="$(mktemp)"
@@ -280,7 +280,7 @@ randomize_contrast()
 		elif ((80 >= random_contrast_percent && random_contrast_percent >= 21)); then
 			contrast_level=75
 		else
-			contrast_level="$(get_rand_level)"
+			contrast_level="$(get_rand_num 100)"
 		fi
 		
 		random_args+=("$contrast_level")
@@ -309,25 +309,31 @@ randomize_all()
 	# First two argument is input flag and input
 	random_args+=("--input" "$1")
 
-	# 35% chance add frame
-	add_frame_chance=0
-	add_frame_percent=$(get_rand_num 100)
-	((add_frame_percent <= add_frame_chance)) && randomize_frame
+	# Randomize fx until at least 1 fx is added
+	fx_added="false"
+	while [ "$fx_added" = "false" ]; do
 
-	# 35% chance swap color
-	swap_color_chance=0
-	swap_color_percent=$(get_rand_num 100)
-	((swap_color_percent <= swap_color_chance)) && randomize_swap_color
+		# 35% chance add frame
+		add_frame_chance=35
+		add_frame_percent=$(get_rand_num 100)
+		((add_frame_percent <= add_frame_chance)) && randomize_frame && fx_added="true"
 
-	# 35% chance add contrast
-	add_contrast_chance=100
-	add_contrast_percent=$(get_rand_num 100)
-	((add_contrast_percent <= add_contrast_chance)) && randomize_contrast
+		# 35% chance swap color
+		swap_color_chance=35
+		swap_color_percent=$(get_rand_num 100)
+		((swap_color_percent <= swap_color_chance)) && randomize_swap_color && fx_added="true"
 
-	# 35% chance mirror img
-	mirror_img_chance=0
-	mirror_img_percent=$(get_rand_num 100)
-	((mirror_img_percent <= mirror_img_chance)) && randomize_mirror_img
+		# 35% chance add contrast
+		add_contrast_chance=35
+		add_contrast_percent=$(get_rand_num 100)
+		((add_contrast_percent <= add_contrast_chance)) && randomize_contrast && fx_added="true"
+
+		# 35% chance mirror img
+		mirror_img_chance=35
+		mirror_img_percent=$(get_rand_num 100)
+		((mirror_img_percent <= mirror_img_chance)) && randomize_mirror_img && fx_added="true"
+
+	done
 
 	parse_opts "${random_args[@]}"
 }
@@ -371,7 +377,6 @@ parse_opts(){
 	echo "$input"
 }
 
-#random_args=()
 file_output=""
 parse_opts "$@"
 #echo "input $input"
