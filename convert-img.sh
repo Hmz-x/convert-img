@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# TO IMPLEMENT:
+# TODO
+# 0) Fix error that occurs SOMETIMES when the swap_colors functions is evoked
 # 1) transparent "item" images to be insterted on the main input image,
 # implemented with features such as slight rotation, color enchacement, easy duplication placement not to mention resized
 # 2) Output to be automatically sent to the server directory and the website to display output image. The output
@@ -15,22 +16,27 @@ VERSION="1.0"
 AUTHOR="Hamza Kerem Mumcu"
 USAGE="Usage: $PROGRAM
 	
-	example: $PROGRAM -i in.jpeg -r -o out.jpeg
-
+example: $PROGRAM -i in.jpeg -r -o out.jpeg
+example: $PROGRAM --input in.jpeg --mvgn --frame blue red # chain filters back to back!
+example: $PROGRAM --input in.jpeg --contrast 0 75 0.8 --swap 20 purple blue
+	
+HELP/VERSION OPTIONS
+	-h|--help
+	-v|--version
+	
+MAIN OPTIONS
 	-i|--input INPUT
 	-o|--output OUTPUT
 	-r|--random
+
+FILTER OPTIONS
 	--swap FUZZ_LVL COLOR_SEARCH COLOR_REPLACE | --swap 20 purple black
 	--frame COLOR1 COLOR2 | --frame blue black
 	--contrast BLACK_POINT_LVL WHITE_POINT_LVL GAMMA_ADJ_VAL | --contrast 0 75 0.5
-	--mvgn	
-	--mvgs	
-	--mhge	
-	--mhgw	
-	-h|--help
-	-v|--version"
-LOG_BOOL="TRUE"
-LOG_FILE="$PROGRAM.log"
+	--mvgn		(mirror vertically gravity north)	
+	--mvgs		(mirror vertically gravity south)	
+	--mhge		(mirror horizontally gravity east)	
+	--mhgw		(mirror horizontally gravity west)"	
 
 err(){
 	printf "%s. Exitting.\n" "$1" >&2
@@ -114,11 +120,6 @@ swap_colors()
 	output="${fx_name}_${input}"
 
 	convert "$input" -debug None -fuzz $fuzz_lvl% -fill "$color_replace" -opaque "$color_search" -flatten "${output}"
-	#[ "$LOG_BOOL" = "TRUE" ] && echo "$(date) $(ls "$output")" &> "$LOG_FILE"
-	#convert "$input" -debug None -fuzz $fuzz_lvl% -fill "$color_replace" -opaque \
-		#"$color_search" -flatten "${output}" && \ 
-		#[ "$LOG_BOOL" = "TRUE" ] && echo "$(date) $(ls "$output")" &> "$LOG_FILE"
-
 	echo "$output"
 }
 
@@ -149,11 +150,7 @@ add_contrast()
 	echo "$output"
 }
 
-resize_item_img()
-{
-	input="$1"
-	#convert "$input" 
-}
+
 
 get_rand_num()
 {
@@ -338,13 +335,6 @@ randomize_all()
 	parse_opts "${random_args[@]}"
 }
 
-shift_for()
-{
-	for i in $(seq 1 $1); do
-		shift
-	done
-}
-
 parse_opts(){
 	# Parse and evaluate each option one by one 
 	while [ "$#" -gt 0 ]; do
@@ -359,14 +349,14 @@ parse_opts(){
 			--mhgw) input="$(mirror_horizontally_gravity_west "$input")";;
 			--swap) input="$(swap_colors "$input" "$2" "$3" "$4")"
 					# shift forward to next CLI args 3 times
-					#shift_for 3;;
-					shift; shift; shift;;
+					shift_cnt=3
+					for i in $(seq 1 $shift_cnt); do shift; done;;
 			--frame) input="$(add_frame "$input" "$2" "$3")"
-					#shift_for 2;;
-					shift; shift;;
+					shift_cnt=2
+					for i in $(seq 1 $shift_cnt); do shift; done;;
 			--contrast) input="$(add_contrast "$input" "$2" "$3" "$4")"
-					#shift_for 3;;
-					shift; shift; shift;;
+					shift_cnt=3
+					for i in $(seq 1 $shift_cnt); do shift; done;;
 			-r|--random) input="$(randomize_all "$input")";;
 			 --) break;;
 			  *) err "Unknown option. Please see '--help'";;
@@ -379,6 +369,4 @@ parse_opts(){
 
 file_output=""
 parse_opts "$@"
-#echo "input $input"
-#echo "output $file_output"
 [ -n "$file_output" ] && mv -v "$input" "$file_output"
