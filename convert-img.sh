@@ -1,18 +1,16 @@
 #!/bin/bash
 
 # TODO
-# 0) Fix error that occurs SOMETIMES when the swap_colors functions is evoked
+# 0) Working on "pretty effect"
 # 1) transparent "item" images to be insterted on the main input image,
 # implemented with features such as slight rotation, color enchacement, easy duplication placement not to mention resized
-# 2) Output to be automatically sent to the server directory and the website to display output image. The output
-# image to be then downloadable after clicking on it.
 # Implement special start shape and star formations: make em stack side by side and top and bottom
 # Client to send image via signal ? and for automatic downloading and running randomization and sending to server
 
 # Program Data
 PROGRAM="convert-img.sh"
 LICENSE="GNU GPLv3"
-VERSION="1.0"
+VERSION="1.1"
 AUTHOR="Hamza Kerem Mumcu"
 USAGE="Usage: $PROGRAM
 	
@@ -115,7 +113,7 @@ swap_colors()
 	color_search="$3"
 	color_replace="$4"
 
-	fx_name="swp${fuzz_lvl}%${color_search}%${color_replace}"
+	fx_name="swp${fuzz_lvl}-${color_search}-${color_replace}"
 	input="$1"
 	output="${fx_name}_${input}"
 
@@ -163,7 +161,7 @@ get_rand_color()
 {
 	# 1-20%: purple, 21-40%: pink, 41-55%: orange, 56-70% yellow, 71-75%: blue, 76-80%: green, 81-85%: red
 	# 86-90%: brown, 91-95: black, 96-100: white
-	rand_color_percent=$(get_rand_num 100)
+	rand_color_percent=$(get_rand_num $random_color_limit)
 
 	if ((20 >= rand_color_percent && rand_color_percent >= 1)); then
 		random_color="purple"	
@@ -194,13 +192,15 @@ randomize_swap_color()
 {
 	# first determine fuzz level. 
 	# 1-5%: 5, 6-15%: 10, 26-35%: 15, 36-55%: 20, 56-75%: 25, 76-85%: 30, 86-95% 35, 96-100%: 40
-	rand_fuzz_percent=$(get_rand_num 100)
+	rand_fuzz_percent=$(get_rand_num $random_color_limit)
 	#echo "rand_fuzz_percent: $rand_fuzz_percent"
 
 	if ((5 >= rand_fuzz_percent && rand_fuzz_percent >= 1)); then
 		fuzz_lvl=5
 	elif ((15 >= rand_fuzz_percent && rand_fuzz_percent >= 6)); then
 		fuzz_lvl=10
+	elif ((25 >= rand_fuzz_percent && rand_fuzz_percent >= 16)); then
+		fuzz_lvl=13
 	elif ((35 >= rand_fuzz_percent && rand_fuzz_percent >= 26)); then
 		fuzz_lvl=15
 	elif ((55 >= rand_fuzz_percent && rand_fuzz_percent >= 36)); then
@@ -217,7 +217,7 @@ randomize_swap_color()
 
 	# secondly determine search color
 	# 1-40%: white 70-41%: black 100-71:% any random color
-	random_search_percent=$(get_rand_num 100)
+	random_search_percent=$(get_rand_num $random_color_limit)
 
 	if ((40 >= random_search_percent && random_search_percent >= 1)); then
 		search_color="white"
@@ -266,22 +266,31 @@ randomize_contrast()
 {
 	random_args+=("--contrast")
 
-	for i in $(seq 1 2); do
-		random_contrast_percent=$(get_rand_num 100)
-		if ((20 >= random_contrast_percent && random_contrast_percent >= 1)); then
-			contrast_level=0
-		elif ((40 >= random_contrast_percent && random_contrast_percent >= 21)); then
-			contrast_level=25
-		elif ((60 >= random_contrast_percent && random_contrast_percent >= 21)); then
-			contrast_level=50
-		elif ((80 >= random_contrast_percent && random_contrast_percent >= 21)); then
-			contrast_level=75
-		else
-			contrast_level="$(get_rand_num 100)"
-		fi
-		
-		random_args+=("$contrast_level")
-	done
+	# First contrast argument (BLACK_PNT_LVL): 0 is non-applied, 25 is pretty
+	random_contrast_percent=$(get_rand_num $random_contrast_limit)
+	random_args+=("$random_contrast_percent")
+
+	# Second contrast argument (WHITE_PNT_LVL): 100 is non-applied, 75 is pretty
+	white_pnt_lvl=$((100 - $(get_rand_num $random_contrast_limit)))
+	random_contrast_percent=$white_pnt_lvl
+	random_args+=("$white_pnt_lvl")
+
+	#for i in $(seq 1 2); do
+		#random_contrast_percent=$(get_rand_num 100)
+		#if ((20 >= random_contrast_percent && random_contrast_percent >= 1)); then
+			#contrast_level=0
+		#elif ((40 >= random_contrast_percent && random_contrast_percent >= 21)); then
+			#contrast_level=25
+		#elif ((60 >= random_contrast_percent && random_contrast_percent >= 21)); then
+			#contrast_level=50
+		#elif ((80 >= random_contrast_percent && random_contrast_percent >= 21)); then
+			#contrast_level=75
+		#else
+			#contrast_level="$(get_rand_num 100)"
+		#fi
+		#
+		#random_args+=("$contrast_level")
+	#done
 
 	random_gamma_percent=$(get_rand_num 100)
 	if ((50 >= random_gamma_percent && random_gamma_percent >= 1)); then
@@ -311,7 +320,7 @@ randomize_all()
 	while [ "$fx_added" = "false" ]; do
 
 		# 35% chance add frame
-		add_frame_chance=35
+		add_frame_chance=0
 		add_frame_percent=$(get_rand_num 100)
 		((add_frame_percent <= add_frame_chance)) && randomize_frame && fx_added="true"
 
@@ -326,7 +335,7 @@ randomize_all()
 		((add_contrast_percent <= add_contrast_chance)) && randomize_contrast && fx_added="true"
 
 		# 35% chance mirror img
-		mirror_img_chance=35
+		mirror_img_chance=0
 		mirror_img_percent=$(get_rand_num 100)
 		((mirror_img_percent <= mirror_img_chance)) && randomize_mirror_img && fx_added="true"
 
@@ -367,6 +376,8 @@ parse_opts(){
 	echo "$input"
 }
 
+random_contrast_limit=30
+random_color_limit=50
 file_output=""
 parse_opts "$@"
 [ -n "$file_output" ] && mv -v "$input" "$file_output"
