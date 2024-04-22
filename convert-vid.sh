@@ -60,7 +60,7 @@ split_into_audio_n_video()
 get_fps()
 {
 	fps="$(ffprobe "$v_ch" 2>&1 | grep -oP '(\d+\.?\d*) fps' | cut -d ' ' -f 1)"
-	partial_fps=$(($(echo "$fps" | awk '{print int($1+0.5)}') / 4))
+	partial_fps=$(($(echo "$fps" | awk '{print int($1+0.5)}') / 1))
 	fps="$partial_fps"
 }
 
@@ -79,7 +79,7 @@ convert_frm()
 
 	# Apply a new (random) fx every N frame
 	# Until the next N count is reached, apply the same fx to the following frames
-	new_fx_every_n_frame=4 
+	new_fx_every_n_frame=48
 
 	count=1
 	while ((count <= frame_num)); do
@@ -107,14 +107,15 @@ convert_frm()
 join_frames()
 {
 	#ffmpeg -framerate $fps -i ./frame_%04d.jpeg -c:v libvpx-vp9 -r $fps -pix_fmt yuv420p output_video_from_frames.mp4
-	vid_out="output_video_from_frames.webm"
+	vid_out="$tmp_dir/output_video_from_frames.webm"
 	ffmpeg -framerate $fps -i "$tmp_dir/frame_%d.png" -c:v libvpx-vp9 -crf 30 -b:v 0 "$vid_out"
 }
 
 # Join together video and audio
 join_audio_n_video()
 {
-	ffmpeg -i "$vid_out" -i "$a_ch" -c:v copy -c:a copy output_combined.webm
+	[ -z "$output" ] = output_combined.webm
+	ffmpeg -i "$vid_out" -i "$a_ch" -c:v copy -c:a copy "$output"
 }
 
 parse_opts(){
@@ -127,6 +128,7 @@ parse_opts(){
 			-a|--audio) a_ch="$2"; shift;;	
 			-v|--video) v_ch="$2"; shift;;	
 			-i|--input) input="$2"; shift;;	
+			-o|--output) output="$2"; shift;;	
 			--) break;;
 			*) err "Unknown option. Please see '--help'";;
 		esac
@@ -157,4 +159,4 @@ join_frames
 # join together video and audio
 join_audio_n_video
 
-rm -r "$tmp_dir"
+[ $? -eq 0 ] && rm -r "$tmp_dir"
