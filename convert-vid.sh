@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# TODO
+# 0) get right video codec for file name and make a_ch and v_ch formats match
+# 1) use yt-dlp to get vid if link given..
+
 # Program Data
 PROGRAM="convert-vid.sh"
 LICENSE="GNU GPLv3"
@@ -40,12 +44,18 @@ show_version(){
 #v_ch="$1"
 #a_ch="$2"
 
-# Split audio and video
-# Split audio
-#ffmpeg -i "$input" -vn -acodec copy "$a_ch"
+# Split into audio and video channels
+split_into_audio_n_video()
+{
+	v_ch="vid.webm"
+	a_ch="audio.webm"
 
-## Split video
-#ffmpeg -i "$input" -an -vcodec copy "$v_ch"
+	# get audio channel
+	ffmpeg -i "$input" -vn -acodec copy "$a_ch"
+
+	# get video channel
+	ffmpeg -i "$input" -an -vcodec copy "$v_ch"
+}
 
 get_fps()
 {
@@ -111,8 +121,9 @@ parse_opts(){
 	# Parse and evaluate each option one by one 
 	while [ "$#" -gt 0 ]; do
 		case "$1" in
-			#-h|--help) show_help;;
-		    #-v|--version) show_version;;
+			-h|--help) show_help;;
+		    --version) show_version;;
+			-s|--split) input="$2"; split_into_audio_n_video; shift;;
 			-a|--audio) a_ch="$2"; shift;;	
 			-v|--video) v_ch="$2"; shift;;	
 			-i|--input) input="$2"; shift;;	
@@ -146,4 +157,4 @@ join_frames
 # join together video and audio
 join_audio_n_video
 
-#rm -r "
+rm -r "$tmp_dir"
