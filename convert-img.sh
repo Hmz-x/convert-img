@@ -59,7 +59,7 @@ mirror_vertically_gravity_south()
 {
 	fx_name="mvgs"
 	input="$1"
-	output="${fx_name}_${input}"
+	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 
 	convert "$input" -gravity South -chop 0x50% -flip -write mpr:bottom +delete \
 		"$input" -gravity South -chop 0x50% -write mpr:top +delete \
@@ -72,7 +72,7 @@ mirror_vertically_gravity_north()
 {
 	fx_name="mvgn"
 	input="$1"
-	output="${fx_name}_${input}"
+	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 
 	convert "$input" -gravity North -chop 0x50% -flip -write mpr:top +delete \
 		"$input" -gravity North -chop 0x50% -write mpr:bottom +delete \
@@ -85,7 +85,7 @@ mirror_horizontally_gravity_west()
 {
 	fx_name="mhgw"
 	input="$1"
-	output="${fx_name}_${input}"
+	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 
 	convert "$input" -gravity West -chop 50%x0 -flop -write mpr:right +delete \
 		"$input" -gravity West -chop 50%x0 -write mpr:left +delete \
@@ -98,7 +98,7 @@ mirror_horizontally_gravity_east()
 {
 	fx_name="mhge"
 	input="$1"
-	output="${fx_name}_${input}"
+	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 
 	convert "$input" -gravity East -chop 50%x0 -flop -write mpr:left +delete \
 		"$input" -gravity East -chop 50%x0 -write mpr:right +delete \
@@ -115,7 +115,7 @@ swap_colors()
 
 	fx_name="swp${fuzz_lvl}-${color_search}-${color_replace}"
 	input="$1"
-	output="${fx_name}_${input}"
+	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 
 	convert "$input" -debug None -fuzz $fuzz_lvl% -fill "$color_replace" -opaque "$color_search" -flatten "${output}"
 	echo "$output"
@@ -125,7 +125,7 @@ add_frame()
 {
 	fx_name="frm"
 	input="$1"
-	output="${fx_name}_${input}"
+	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 	tmp_file="$(mktemp)"
 
 	convert "$input" \( +clone  -background "$2"  -shadow 60x20-10+10 \) \
@@ -141,7 +141,7 @@ add_contrast()
 {
 	fx_name="cntrst"
 	input="$1"
-	output="${fx_name}_${input}"
+	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 
 	convert "$input" -level $2%,$3%,"$4" "$output"
 

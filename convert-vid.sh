@@ -58,14 +58,38 @@ get_fps()
 split_vid()
 {
 	#ffmpeg -i "$v_ch" -vf "fps=${fps}" ./frame_%04d.jpeg
-	ffmpeg -i "$v_ch" -vf "format=yuv420p" -color_range 2 -r $fps "$tmp_dir/frame_%04d.png"
+	ffmpeg -i "$v_ch" -vf "format=yuv420p" -color_range 2 -r $fps "$tmp_dir/frame_%d.png"
 }
 
 # convert-img each frame
 convert_frm()
 {
-	for frame in frame_*.png; do
-		./convert-img.sh -i "$tmp_dir/$frame" --contrast 10 70 0.8 -o "$tmp_dir/$frame"
+	# Get number of frames in tmp_dir
+	frame_num="$(ls "$tmp_dir" | wc -w)"
+
+	# Apply a new (random) fx every N frame
+	# Until the next N count is reached, apply the same fx to the following frames
+	new_fx_every_n_frame=4 
+
+	count=1
+	while ((count <= frame_num)); do
+		# Generate new edit
+		fname="$tmp_dir/frame_${count}.png" # file name
+		./convert-img.sh -i "$fname" -r -o "$fname"
+
+		# Declare fx array, read string of fx from log, assign each field read to new index
+		fx_arr=()
+		read -r fx_str < "$con_img_log"
+		read -ra fx_arr <<< "$fx_str"
+		
+		# Apply previously created edit to the next $new_fx_every_n_frame frames
+		for i in $(seq 1 $new_fx_every_n_frame); do
+			fname="$tmp_dir/frame_$((count + i)).png" # file name
+			(((count + i) <= frame_num)) && \
+				./convert-img.sh -i "$fname" ${fx_arr[@]} -o "$fname"
+		done
+
+		count=$((count + new_fx_every_n_frame))
 	done
 }
 
@@ -73,10 +97,15 @@ convert_frm()
 join_frames()
 {
 	#ffmpeg -framerate $fps -i ./frame_%04d.jpeg -c:v libvpx-vp9 -r $fps -pix_fmt yuv420p output_video_from_frames.mp4
-	ffmpeg -framerate $fps -i "$tmp_dir/frame_%04d.png" -c:v libvpx-vp9 -crf 30 -b:v 0 output_video_from_frames.webm
+	vid_out="output_video_from_frames.webm"
+	ffmpeg -framerate $fps -i "$tmp_dir/frame_%d.png" -c:v libvpx-vp9 -crf 30 -b:v 0 "$vid_out"
 }
 
 # Join together video and audio
+join_audio_n_video()
+{
+	ffmpeg -i "$vid_out" -i "$a_ch" -c:v copy -c:a copy output_combined.webm
+}
 
 parse_opts(){
 	# Parse and evaluate each option one by one 
@@ -98,6 +127,7 @@ parse_opts(){
 
 tmp_dir="$(mktemp -d)"
 fps="4"
+con_img_log="/var/log/convert-img/convert-img.log"
 
 parse_opts "$@"
 
@@ -107,7 +137,13 @@ get_fps
 # Split video into frames
 split_vid
 
+# Convert frame
+convert_frm
+
 # join frames into video
 join_frames
+
+# join together video and audio
+join_audio_n_video
 
 #rm -r "
