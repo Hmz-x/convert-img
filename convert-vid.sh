@@ -60,7 +60,6 @@ get_fps()
 # Split video into frames
 split_vid()
 {
-	#ffmpeg -i "$v_ch" -vf "fps=${fps}" ./frame_%04d.jpeg
 	ffmpeg -i "$v_ch" -vf "format=yuv420p" -color_range 2 -r $fps "$tmp_dir/frame_%d.png"
 }
 
@@ -94,9 +93,6 @@ convert_frm()
 			else
 				break
 			fi
-			#fname="$tmp_dir/frame_$((count + i)).png" # file name
-			#(((count + i) <= frame_num)) && \
-				#./convert-img.sh -i "$fname" ${fx_arr[@]} -o "$fname"
 		done
 
 		count=$((count + new_fx_every_n_frame))
@@ -108,8 +104,7 @@ join_frames()
 {
 	#ffmpeg -framerate $fps -i ./frame_%04d.jpeg -c:v libvpx-vp9 -r $fps -pix_fmt yuv420p output_video_from_frames.mp4
 	vid_out="$tmp_dir/output_video_from_frames.webm"
-	#ffmpeg -framerate $fps -i "$tmp_dir/frame_%d.png" -c:v libvpx-vp9 -crf 30 -b:v 0 "$vid_out"
-	ffmpeg -framerate $fps -i "$tmp_dir/frame_%d.png" -c:v libvpx-vp9 -b:v 0 "$vid_out"
+	ffmpeg -framerate $fps -i "$tmp_dir/frame_%d.png" -c:v libvpx-vp9 -crf 30 -b:v 0 "$vid_out"
 }
 
 # Join together video and audio
@@ -117,6 +112,12 @@ join_audio_n_video()
 {
 	[ -z "$output" ] = output_combined.webm
 	ffmpeg -i "$vid_out" -i "$a_ch" -c:v copy -c:a copy "$output"
+}
+
+check_deps()
+{
+	[ -z "$(command -v "ffmpeg")" ]  && err "ffmpeg not found in path"
+	[ -z "$(command -v "ffprobe")" ]  && err "ffprobe not found in path"
 }
 
 parse_opts(){
@@ -140,9 +141,12 @@ parse_opts(){
 }
 
 tmp_dir="$(mktemp -d)"
-fps="4"
 con_img_log="/var/log/convert-img/convert-img.log"
 
+# Check dependencies are found on system
+check_deps
+
+# Parse CLI args
 parse_opts "$@"
 
 # Get frame rate

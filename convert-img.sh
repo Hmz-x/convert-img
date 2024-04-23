@@ -348,6 +348,11 @@ randomize_all()
 	parse_opts "${random_args[@]}"
 }
 
+check_deps()
+{
+	[ -z "$(command -v "convert")" ]  && err "convert not found in path"
+}
+
 parse_opts(){
 	# Parse and evaluate each option one by one 
 	while [ "$#" -gt 0 ]; do
@@ -391,5 +396,9 @@ random_contrast_limit=30
 # Pretty limit for random color arguments (anything more than this value might look ugly)
 random_color_limit=50
 file_output=""
+
+# Check dependencies are found on system
+check_deps
+# Parse CLI args
 parse_opts "$@"
 [ -n "$file_output" ] && mv -v "$input" "$file_output"
