@@ -37,18 +37,11 @@ show_version(){
 	exit 0
 }
 
-#audio_format="aac"
-#video_format="mp4"
-#v_ch="video_channel.${video_format}" # video channel
-#a_ch="audio_channel.${audio_format}" # audio channel
-#v_ch="$1"
-#a_ch="$2"
-
 # Split into audio and video channels
 split_into_audio_n_video()
 {
-	v_ch="vid.webm"
-	a_ch="audio.webm"
+	v_ch="$tmp_dir/vid.webm"
+	a_ch="$tmp_dir/audio.webm"
 
 	# get audio channel
 	ffmpeg -i "$input" -vn -acodec copy "$a_ch"
@@ -60,7 +53,7 @@ split_into_audio_n_video()
 get_fps()
 {
 	fps="$(ffprobe "$v_ch" 2>&1 | grep -oP '(\d+\.?\d*) fps' | cut -d ' ' -f 1)"
-	partial_fps=$(($(echo "$fps" | awk '{print int($1+0.5)}') / 1))
+	partial_fps=$(($(echo "$fps" | awk '{print int($1+0.5)}') / 2))
 	fps="$partial_fps"
 }
 
@@ -83,20 +76,27 @@ convert_frm()
 
 	count=1
 	while ((count <= frame_num)); do
-		# Generate new edit
+		# Generate new edit using --random
 		fname="$tmp_dir/frame_${count}.png" # file name
-		./convert-img.sh -i "$fname" -r -o "$fname"
+		[ -r "$fname" ] && ./convert-img.sh -i "$fname" -r -o "$fname"
 
 		# Declare fx array, read string of fx from log, assign each field read to new index
 		fx_arr=()
 		read -r fx_str < "$con_img_log"
 		read -ra fx_arr <<< "$fx_str"
 		
-		# Apply previously created edit to the next $new_fx_every_n_frame frames
+		# Apply previously created edit (last --random generated flags)
+		# to the next $new_fx_every_n_frame frames
 		for i in $(seq 1 $new_fx_every_n_frame); do
 			fname="$tmp_dir/frame_$((count + i)).png" # file name
-			(((count + i) <= frame_num)) && \
+			if [ -r "$fname" ]; then
 				./convert-img.sh -i "$fname" ${fx_arr[@]} -o "$fname"
+			else
+				break
+			fi
+			#fname="$tmp_dir/frame_$((count + i)).png" # file name
+			#(((count + i) <= frame_num)) && \
+				#./convert-img.sh -i "$fname" ${fx_arr[@]} -o "$fname"
 		done
 
 		count=$((count + new_fx_every_n_frame))
@@ -108,7 +108,8 @@ join_frames()
 {
 	#ffmpeg -framerate $fps -i ./frame_%04d.jpeg -c:v libvpx-vp9 -r $fps -pix_fmt yuv420p output_video_from_frames.mp4
 	vid_out="$tmp_dir/output_video_from_frames.webm"
-	ffmpeg -framerate $fps -i "$tmp_dir/frame_%d.png" -c:v libvpx-vp9 -crf 30 -b:v 0 "$vid_out"
+	#ffmpeg -framerate $fps -i "$tmp_dir/frame_%d.png" -c:v libvpx-vp9 -crf 30 -b:v 0 "$vid_out"
+	ffmpeg -framerate $fps -i "$tmp_dir/frame_%d.png" -c:v libvpx-vp9 -b:v 0 "$vid_out"
 }
 
 # Join together video and audio
