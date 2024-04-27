@@ -50,6 +50,16 @@ split_into_audio_n_video()
 	ffmpeg -i "$input" -an -vcodec copy "$v_ch"
 }
 
+ytdl_vid()
+{
+	#title="$(yt-dlp --get-title "$input")"
+
+	v_ch="$tmp_dir/vid.webm"
+	a_ch="$tmp_dir/audio.webm"
+	yt-dlp -f bestvideo "$input" -o "$v_ch"
+	yt-dlp -f bestaudio "$input" -o "$a_ch"
+}
+
 get_fps()
 {
 	fps="$(ffprobe "$v_ch" 2>&1 | grep -oP '(\d+\.?\d*) fps' | cut -d ' ' -f 1)"
@@ -77,7 +87,7 @@ convert_frm()
 	while ((count <= frame_num)); do
 		# Generate new edit using --random
 		fname="$tmp_dir/frame_${count}.png" # file name
-		[ -r "$fname" ] && ./convert-img.sh -i "$fname" -r -o "$fname"
+		[ -r "$fname" ] && convert-img.sh -i "$fname" -r -o "$fname"
 
 		# Declare fx array, read string of fx from log, assign each field read to new index
 		fx_arr=()
@@ -116,8 +126,10 @@ join_audio_n_video()
 
 check_deps()
 {
-	[ -z "$(command -v "ffmpeg")" ]  && err "ffmpeg not found in path"
-	[ -z "$(command -v "ffprobe")" ]  && err "ffprobe not found in path"
+	deps=("convert-img.sh" "ffmpeg" "ffprobe")
+	for pkg in "${deps[@]}"; do
+		[ -z "$(command -v "$pkg")" ]  && err "$pkg not found in path"
+	done
 }
 
 parse_opts(){
@@ -129,7 +141,7 @@ parse_opts(){
 			-s|--split) input="$2"; split_into_audio_n_video; shift;;
 			-a|--audio) a_ch="$2"; shift;;	
 			-v|--video) v_ch="$2"; shift;;	
-			-i|--input) input="$2"; shift;;	
+			-y|--ytdl) input="$2"; ytdl_vid; shift;;	
 			-o|--output) output="$2"; shift;;	
 			--) break;;
 			*) err "Unknown option. Please see '--help'";;
