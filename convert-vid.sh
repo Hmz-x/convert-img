@@ -99,7 +99,7 @@ convert_frm()
 		for i in $(seq 1 $new_fx_every_n_frame); do
 			fname="$tmp_dir/frame_$((count + i)).png" # file name
 			if [ -r "$fname" ]; then
-				./convert-img.sh -i "$fname" ${fx_arr[@]} -o "$fname"
+				convert-img.sh -i "$fname" ${fx_arr[@]} -o "$fname"
 			else
 				break
 			fi
@@ -126,7 +126,7 @@ join_audio_n_video()
 
 check_deps()
 {
-	deps=("convert-img.sh" "ffmpeg" "ffprobe")
+	deps=("convert-img.sh" "ffmpeg" "ffprobe" "convert")
 	for pkg in "${deps[@]}"; do
 		[ -z "$(command -v "$pkg")" ]  && err "$pkg not found in path"
 	done
