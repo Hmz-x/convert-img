@@ -120,7 +120,7 @@ join_frames()
 # Join together video and audio
 join_audio_n_video()
 {
-	[ -z "$output" ] = output_combined.webm
+	[ -z "$output" ] && output=output_combined.webm
 	ffmpeg -i "$vid_out" -i "$a_ch" -c:v copy -c:a copy "$output"
 }
 
