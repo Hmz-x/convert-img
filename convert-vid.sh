@@ -3,6 +3,8 @@
 # TODO
 # 0) get right video codec for file name and make a_ch and v_ch formats match
 # 1) use yt-dlp to get vid if link given..
+# -f 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4'
+#  on --sec X amount of secnd
 
 # Program Data
 PROGRAM="convert-vid.sh"
@@ -81,13 +83,14 @@ convert_frm()
 
 	# Apply a new (random) fx every N frame
 	# Until the next N count is reached, apply the same fx to the following frames
-	new_fx_every_n_frame=48
+	new_fx_every_n_frame=36
 
 	count=1
 	while ((count <= frame_num)); do
 		# Generate new edit using --random
 		fname="$tmp_dir/frame_${count}.png" # file name
 		[ -r "$fname" ] && convert-img.sh -i "$fname" -r -o "$fname"
+		echo "~.~.~ $count/$frame_num ~.~.~"
 
 		# Declare fx array, read string of fx from log, assign each field read to new index
 		fx_arr=()
@@ -100,6 +103,7 @@ convert_frm()
 			fname="$tmp_dir/frame_$((count + i)).png" # file name
 			if [ -r "$fname" ]; then
 				convert-img.sh -i "$fname" ${fx_arr[@]} -o "$fname"
+				echo "~.~.~ $count/$frame_num ~.~.~"
 			else
 				break
 			fi

@@ -392,13 +392,13 @@ log_file="/var/log/convert-img/convert-img.log"
 # Default minimum amount of times an effect will be applied
 min_fx_cnt=1
 # Pretty limit for random contrast arguments (anything more than this value might look ugly)
-random_contrast_limit=30
+random_contrast_limit=46
 # Pretty limit for random color arguments (anything more than this value might look ugly)
-random_color_limit=50
+random_color_limit=60
 file_output=""
 
 # Check dependencies are found on system
 check_deps
 # Parse CLI args
 parse_opts "$@"
-[ -n "$file_output" ] && mv -v "$input" "$file_output"
+[ -n "$file_output" ] && mv "$input" "$file_output"
