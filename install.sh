@@ -7,7 +7,7 @@ err(){
 	exit 1
 }
 
-[ $UID -ne 0 ] && "Run as root to install to PATH"
+[ $UID -ne 0 ] && err "Run as root to install to PATH"
 
 cp -v "$(dirname "$0")/convert-img.sh" /usr/local/bin
 cp -v "$(dirname "$0")/convert-vid.sh" /usr/local/bin

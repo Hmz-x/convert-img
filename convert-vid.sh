@@ -42,8 +42,11 @@ show_version(){
 # Split into audio and video channels
 split_into_audio_n_video()
 {
-	v_ch="$tmp_dir/vid.webm"
-	a_ch="$tmp_dir/audio.webm"
+	#v_ch="$tmp_dir/vid.webm"
+	#a_ch="$tmp_dir/audio.webm"
+
+	v_ch="$tmp_dir/vid.mp4"
+	a_ch="$tmp_dir/audio.avi"
 
 	# get audio channel
 	ffmpeg -i "$input" -vn -acodec copy "$a_ch"
@@ -56,16 +59,16 @@ ytdl_vid()
 {
 	#title="$(yt-dlp --get-title "$input")"
 
-	v_ch="$tmp_dir/vid.webm"
-	a_ch="$tmp_dir/audio.webm"
-	yt-dlp -f bestvideo "$input" -o "$v_ch"
-	yt-dlp -f bestaudio "$input" -o "$a_ch"
+	v_ch="$tmp_dir/vid.mp4"
+	a_ch="$tmp_dir/audio.avi"
+	yt-dlp -f 'bestvideo[ext=mp4]' "$input" -o "$v_ch"
+	yt-dlp -f 'bestaudio[ext=avi]' "$input" -o "$a_ch"
 }
 
 get_fps()
 {
 	fps="$(ffprobe "$v_ch" 2>&1 | grep -oP '(\d+\.?\d*) fps' | cut -d ' ' -f 1)"
-	partial_fps=$(($(echo "$fps" | awk '{print int($1+0.5)}') / 2))
+	partial_fps=$(($(echo "$fps" | awk '{print int($1+0.5)}') / 1))
 	fps="$partial_fps"
 }
 
@@ -89,7 +92,7 @@ convert_frm()
 	while ((count <= frame_num)); do
 		# Generate new edit using --random
 		fname="$tmp_dir/frame_${count}.png" # file name
-		[ -r "$fname" ] && convert-img.sh -i "$fname" -r -o "$fname"
+		[ -r "$fname" ] && convert-img.sh -l "$con_img_log" -i "$fname" -r -o "$fname"
 		echo "~.~.~ $count/$frame_num ~.~.~"
 
 		# Declare fx array, read string of fx from log, assign each field read to new index
@@ -103,7 +106,7 @@ convert_frm()
 			fname="$tmp_dir/frame_$((count + i)).png" # file name
 			if [ -r "$fname" ]; then
 				convert-img.sh -i "$fname" ${fx_arr[@]} -o "$fname"
-				echo "~.~.~ $count/$frame_num ~.~.~"
+				echo "~.~.~ $((count + i))/$frame_num ~.~.~"
 			else
 				break
 			fi
@@ -156,8 +159,10 @@ parse_opts(){
 	echo "$input"
 }
 
+# Create temp directory and temp log file
 tmp_dir="$(mktemp -d)"
-con_img_log="/var/log/convert-img/convert-img.log"
+con_img_log="$tmp_dir/convert-img.log"
+touch "$con_img_log"
 
 # Check dependencies are found on system
 check_deps
