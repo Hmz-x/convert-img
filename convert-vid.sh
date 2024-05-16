@@ -60,9 +60,9 @@ ytdl_vid()
 	#title="$(yt-dlp --get-title "$input")"
 
 	v_ch="$tmp_dir/vid.mp4"
-	a_ch="$tmp_dir/audio.avi"
+	a_ch="$tmp_dir/audio.m4a"
 	yt-dlp -f 'bestvideo[ext=mp4]' "$input" -o "$v_ch"
-	yt-dlp -f 'bestaudio[ext=avi]' "$input" -o "$a_ch"
+	yt-dlp -f 'bestaudio[ext=m4a]' "$input" -o "$a_ch"
 }
 
 get_fps()
