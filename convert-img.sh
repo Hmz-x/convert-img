@@ -62,7 +62,7 @@ mirror_vertically_gravity_south()
 	input="$1"
 	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 
-	convert "$input" -gravity South -chop 0x50% -flip -write mpr:bottom +delete \
+	magick "$input" -gravity South -chop 0x50% -flip -write mpr:bottom +delete \
 		"$input" -gravity South -chop 0x50% -write mpr:top +delete \
 		-append mpr:top mpr:bottom "$output"
 
@@ -75,7 +75,7 @@ mirror_vertically_gravity_north()
 	input="$1"
 	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 
-	convert "$input" -gravity North -chop 0x50% -flip -write mpr:top +delete \
+	magick "$input" -gravity North -chop 0x50% -flip -write mpr:top +delete \
 		"$input" -gravity North -chop 0x50% -write mpr:bottom +delete \
 		-append mpr:top mpr:bottom "$output"
 
@@ -88,7 +88,7 @@ mirror_horizontally_gravity_west()
 	input="$1"
 	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 
-	convert "$input" -gravity West -chop 50%x0 -flop -write mpr:right +delete \
+	magick "$input" -gravity West -chop 50%x0 -flop -write mpr:right +delete \
 		"$input" -gravity West -chop 50%x0 -write mpr:left +delete \
 		+append mpr:left mpr:right "$output"
 
@@ -101,7 +101,7 @@ mirror_horizontally_gravity_east()
 	input="$1"
 	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 
-	convert "$input" -gravity East -chop 50%x0 -flop -write mpr:left +delete \
+	magick "$input" -gravity East -chop 50%x0 -flop -write mpr:left +delete \
 		"$input" -gravity East -chop 50%x0 -write mpr:right +delete \
 		+append mpr:left mpr:right "$output"
 
@@ -118,7 +118,7 @@ swap_colors()
 	input="$1"
 	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 
-	convert "$input" -debug None -fuzz $fuzz_lvl% -fill "$color_replace" -opaque "$color_search" -flatten "${output}"
+	magick "$input" -debug None -fuzz $fuzz_lvl% -fill "$color_replace" -opaque "$color_search" -flatten "${output}"
 	echo "$output"
 }
 
@@ -129,9 +129,9 @@ add_frame()
 	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 	tmp_file="$(mktemp)"
 
-	convert "$input" \( +clone  -background "$2"  -shadow 60x20-10+10 \) \
+	magick "$input" \( +clone  -background "$2"  -shadow 60x20-10+10 \) \
 		+swap -background none -layers merge +repage "$tmp_file" && \
-	convert "$tmp_file" \( +clone  -background "$3"  -shadow 60x20+10+10 \) \
+	magick "$tmp_file" \( +clone  -background "$3"  -shadow 60x20+10+10 \) \
 		+swap -background none -layers merge +repage "$output"
 	
 	rm "$tmp_file"	
@@ -144,7 +144,7 @@ add_contrast()
 	input="$1"
 	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 
-	convert "$input" -level $2%,$3%,"$4" "$output"
+	magick "$input" -level $2%,$3%,"$4" "$output"
 
 	echo "$output"
 }
@@ -349,7 +349,7 @@ randomize_all()
 
 check_deps()
 {
-	[ -z "$(command -v "convert")" ]  && err "convert not found in path"
+	[ -z "$(command -v "magick")" ]  && err "magick not found in path"
 }
 
 parse_opts(){
