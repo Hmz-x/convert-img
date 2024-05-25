@@ -253,8 +253,8 @@ randomize_mirror_img()
 		case $rand_mirror_fx in 
 			1) :;;
 			2) :;;
-			3) echo "${random_args[@]}" | grep -q -- "--mhge" || random_args+=("--mhge");;
-			4) echo "${random_args[@]}" | grep -q -- "--mhgw" || random_args+=("--mhgw");;
+			3) echo "${random_args[@]}" | grep -q "--mhge" || random_args+=("--mhge");;
+			4) echo "${random_args[@]}" | grep -q "--mhgw" || random_args+=("--mhgw");;
 		esac
 	fi
 }
