@@ -63,9 +63,9 @@ mirror_vertically_gravity_south()
 	output="$(dirname "$input")/${fx_name}_$(basename "$input")"
 
 	magick "$input" -gravity South -chop 0x50% -flip -write mpr:bottom +delete \
-		"$input" -gravity South -chop 0x50% -write mpr:top +delete \
-		-append mpr:top mpr:bottom "$output"
-
+       "$input" -gravity South -chop 0x50% -write mpr:top +delete \
+       mpr:top mpr:bottom -append "$output"
+	
 	echo "$output"
 }
 
@@ -77,7 +77,7 @@ mirror_vertically_gravity_north()
 
 	magick "$input" -gravity North -chop 0x50% -flip -write mpr:top +delete \
 		"$input" -gravity North -chop 0x50% -write mpr:bottom +delete \
-		-append mpr:top mpr:bottom "$output"
+		mpr:top mpr:bottom -append "$output"
 
 	echo "$output"
 }
@@ -90,7 +90,7 @@ mirror_horizontally_gravity_west()
 
 	magick "$input" -gravity West -chop 50%x0 -flop -write mpr:right +delete \
 		"$input" -gravity West -chop 50%x0 -write mpr:left +delete \
-		+append mpr:left mpr:right "$output"
+		mpr:left mpr:right +append "$output"
 
 	echo "$output"
 }
@@ -103,7 +103,7 @@ mirror_horizontally_gravity_east()
 
 	magick "$input" -gravity East -chop 50%x0 -flop -write mpr:left +delete \
 		"$input" -gravity East -chop 50%x0 -write mpr:right +delete \
-		+append mpr:left mpr:right "$output"
+		mpr:left mpr:right +append "$output"
 
 	echo "$output"
 }
